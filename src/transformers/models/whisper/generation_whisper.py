@@ -16,7 +16,7 @@ import copy
 import math
 import warnings
 import zlib
-from typing import Callable, Iterator, List, Optional, Tuple, Union
+from typing import Callable, Iterator, List, Optional, Tuple, Union, Literal
 
 import numpy as np
 import torch
@@ -282,7 +282,7 @@ class WhisperGenerationMixin:
         stopping_criteria: Optional[StoppingCriteriaList] = None,
         prefix_allowed_tokens_fn: Optional[Callable[[int, torch.Tensor], List[int]]] = None,
         synced_gpus: bool = False,
-        return_timestamps: Optional[bool] = None,
+        return_timestamps: Optional[Union[bool, Literal["word"]]] = None,
         task: Optional[str] = None,
         language: Optional[Union[str, List[str]]] = None,
         is_multilingual: Optional[bool] = None,
@@ -346,7 +346,7 @@ class WhisperGenerationMixin:
                 Retrieval](https://arxiv.org/abs/2010.00904).
             synced_gpus (`bool`, *optional*, defaults to `False`):
                 Whether to continue running the while loop until max_length (needed for ZeRO stage 3)
-            return_timestamps (`bool`, *optional*):
+            return_timestamps (`bool` or `Literal["word"]`, *optional*):
                 Whether to return the timestamps with the text. This enables the `WhisperTimestampsLogitsProcessor`.
             task (`str`, *optional*):
                 Task to use for generation, either "translate" or "transcribe". The `model.config.forced_decoder_ids`
@@ -1187,7 +1187,10 @@ class WhisperGenerationMixin:
                 "For more details on how to generate the approtiate config, refer to https://github.com/huggingface/transformers/issues/21878#issuecomment-1451902363"
             )
 
-        generation_config.return_timestamps = return_timestamps
+        if return_timestamps is True:
+            generation_config.return_timestamps = return_timestamps
+        else:
+            generation_config.return_timestamps = False
 
         if hasattr(generation_config, "no_timestamps_token_id"):
             timestamp_begin = generation_config.no_timestamps_token_id + 1
